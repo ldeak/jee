@@ -8,6 +8,7 @@ import javax.el.ELContext;
 import javax.el.ELResolver;
 import javax.el.ExpressionFactory;
 import javax.el.FunctionMapper;
+import javax.el.StandardELContext;
 import javax.el.ValueExpression;
 import javax.el.VariableMapper;
 import javax.faces.context.FacesContext;
@@ -21,8 +22,19 @@ public class ELContextResolver implements PatternResolver {
 		if (StringUtil.isBlank(pattern)) {
             return "";
         }
-		ELContext ctx = new ELContextWrapper(FacesContext.getCurrentInstance().getELContext(), beans);
-        ExpressionFactory expressionFactory = FacesContext.getCurrentInstance().getApplication().getExpressionFactory();
+		ExpressionFactory expressionFactory;
+		if (FacesContext.getCurrentInstance() == null || FacesContext.getCurrentInstance().getApplication() == null) {
+			expressionFactory = ExpressionFactory.newInstance();
+		} else {
+			expressionFactory = FacesContext.getCurrentInstance().getApplication().getExpressionFactory();
+		}
+		ELContext baseContext;
+		if (FacesContext.getCurrentInstance() == null) {
+			baseContext = new StandardELContext(expressionFactory);
+		} else {
+			baseContext = FacesContext.getCurrentInstance().getELContext();
+		}
+		ELContext ctx = new ELContextWrapper(baseContext, beans);
         ValueExpression exp = expressionFactory.createValueExpression(ctx, pattern, Object.class);
         return StringUtil.toString(exp.getValue(ctx), null);
 	}
